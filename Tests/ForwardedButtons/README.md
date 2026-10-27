@@ -20,4 +20,5 @@ Helper and a live test with no mouse attached to the receiving Mac.
 
 The button fix is adapted from upstream
 [PR #2066](https://github.com/noah-nuebling/mac-mouse-fix/pull/2066).
-Smooth scrolling and click-and-drag eligibility are outside its scope.
+The follow-up drag fix removes local-mouse eligibility checks from SwitchMaster;
+drag activation and motion require a live test. Smooth scrolling is outside its scope.

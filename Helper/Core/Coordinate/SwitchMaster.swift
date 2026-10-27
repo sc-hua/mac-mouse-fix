@@ -83,7 +83,6 @@ import ReactiveSwift
     /// Derived from: Attached Devices
     
     var someDeviceHasScroll                 = false
-    var someDeviceHasPointing               = false
     
     /// Derived from: Various
     
@@ -293,9 +292,8 @@ import ReactiveSwift
         readsAndWritesState_Begin(readWriteTracker); defer { readsAndWritesState_End(readWriteTracker) }
 
         /// Update state
-        ///     Only physical hardware facts are derived from the attached devices. Button mappings are analyzed from the remaps alone (see `updateButtonModifierUsage`), so that they keep working without a matching physical device.
+        ///     Only scroll availability is derived from the attached devices. Button and drag mappings must work with forwarded input even when no mouse is enumerated locally.
         self.someDeviceHasScroll = DeviceManager.someDeviceHasScrollWheel()
-        self.someDeviceHasPointing = DeviceManager.someDeviceHasPointing()
         
         /// Call togglers
         
@@ -491,7 +489,7 @@ import ReactiveSwift
         var priority = kMFModifierPriorityUnused
         
         let someKbModReallyModifiesScroll   = somekbModModifiesScroll             && someDeviceHasScroll          && !scrollKillSwitch
-        let someKbModReallyModifiesPointing = somekbModModifiesPointing           && someDeviceHasPointing        && true
+        let someKbModReallyModifiesPointing = somekbModModifiesPointing
         let someKbModReallyModifiesButtons  = somekbModModifiesButtons            && !buttonKillSwitch
         
         if someKbModReallyModifiesScroll || someKbModReallyModifiesPointing || someKbModReallyModifiesButtons {
@@ -518,7 +516,7 @@ import ReactiveSwift
         var priority = kMFModifierPriorityUnused
         
         let someBtnReallyModifiesScroll      = someButtonModifiesScroll             && someDeviceHasScroll        && !scrollKillSwitch      ;
-        let someBtnReallyModifiesPointing    = someButtonModifiesPointing           && someDeviceHasPointing      && true                   ;
+        let someBtnReallyModifiesPointing    = someButtonModifiesPointing;
         let someBtnReallyModifiesButtons     = someButtonModifiesButtons            && !buttonKillSwitch      ; /// `!buttonKillSwitch` is redundant here ([Mar 2025]: Why?), but makes it more readable?
         
         if someBtnReallyModifiesScroll || someBtnReallyModifiesPointing || someBtnReallyModifiesButtons {
@@ -565,7 +563,7 @@ import ReactiveSwift
         ///     - Button mappings don't depend on a matching physical device: a configured button must enable the tap even if no mouse exposing that button is enumerated (e.g. the button input is forwarded).
         let buttonsAreUsedAsModifiers =
             (someDeviceHasScroll        && someButtonModifiesScroll)                ||
-            (someDeviceHasPointing      && someButtonModifiesPointing)              ||
+            someButtonModifiesPointing ||
             someButtonModifiesButtons
         
         if currentModificationModifiesButtons || buttonsAreUsedAsModifiers {
@@ -584,7 +582,9 @@ import ReactiveSwift
         }
         
         /// Determine enable
-        let enable = someDeviceHasPointing && currentModificationModifiesPointing
+        /// A matching drag mapping enables movement interception only while its modifiers are held.
+        /// Forwarded movement does not require a locally enumerated mouse.
+        let enable = currentModificationModifiesPointing
         
         if enable {
             
