@@ -22,3 +22,14 @@ The button fix is adapted from upstream
 [PR #2066](https://github.com/noah-nuebling/mac-mouse-fix/pull/2066).
 The follow-up drag fix removes local-mouse eligibility checks from SwitchMaster;
 drag activation and motion require a live test. Smooth scrolling is outside its scope.
+
+To reproduce the startup regression, launch an isolated test Helper without
+Accessibility permission, then run:
+
+```sh
+swift Tests/ForwardedButtons/HelperStartupProbe.swift com.sc-hua.mac-mouse-fix.deskflow.helper
+```
+
+The probe sends device queries which previously initialized input modules too
+early and crashed the Helper. It also checks that version queries still work.
+It does not grant permissions, change configuration, or post input events.

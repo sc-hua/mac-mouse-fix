@@ -154,6 +154,16 @@ static CFDataRef _Nullable didReceiveMessage(CFMessagePortRef port, SInt32 messa
     
     /// Process message
     NSObject *response = nil;
+
+    #if IS_HELPER
+        /// The message port also runs while waiting for Accessibility permission.
+        /// Device/configuration requests must not touch uninitialized input modules.
+        if (![AccessibilityCheck inputIsInitialized] &&
+            ![@[@"getEnvAndArgs", @"isDarkMode", @"terminate", @"checkAccessibility", @"getBundleVersion"] containsObject:message]) {
+            DDLogDebug("Ignoring message before input initialization: %@", message);
+            return NULL;
+        }
+    #endif
     
     /// Handle commands
     ///     Note: [Jul 2025] We're using NSString to identify the commands. I think this is what `SInt32 messageID` is for, but it's nice to be able to debug-print the strings. To replicate that with `SInt32 messageID`, we might wanna use a `FOR_EACH` macro or `X-MACRO` ... or just keep using strings, it works fine.
