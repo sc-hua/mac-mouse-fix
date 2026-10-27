@@ -15,6 +15,7 @@
 #import "PointerFreeze.h"
 @import Cocoa;
 #import "HelperUtility.h"
+#import "EventUtility.h"
 #import "Mac_Mouse_Fix_Helper-Swift.h"
 #import "CGSConnection.h"
 #import "ModificationUtility.h"
@@ -191,6 +192,12 @@ CGEventRef _Nullable mouseMovedCallback(CGEventTapProxy proxy, CGEventType type,
     /// Warp pointer to origin to prevent cursor movement
     ///     This only works when the suppressionInterval is a certain size, and that will cause a slight stutter / delay until the mouse starts moving againg when we deactivate. So this isn't optimal
     CGWarpMouseCursorPosition(_origin);
+
+    /// Forwarded events carry an absolute location which would move the cursor again
+    /// after the warp. Keep their dispatch point frozen without changing gesture deltas.
+    if (CGEventGetSendingDevice(event) == NULL) {
+        CGEventSetLocation(event, _origin);
+    }
 
     //        CGWarpMouseCursorPosition(_drag->origin);
     /// ^ Move pointer to origin instead of usageOrigin to make scroll events dispatch there - would be nice but that moves the pointer, which creates events which will feed back into our eventTap and mess everything up (even though `CGWarpMouseCursorPosition` docs say that it doesn't create events??)
