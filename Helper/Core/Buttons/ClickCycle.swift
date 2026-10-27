@@ -94,9 +94,9 @@ class ClickCycle: NSObject {
     
     /// Main interface (for Buttons.swift, which owns this [Sep 2026])
 
-    func isActiveFor(device: NSNumber, button: NSNumber) -> Bool { /// Think this is unused now that we moved ButtonModifiers away from using Device
+    func isActiveFor(device: Device, button: NSNumber) -> Bool {
         guard let state = state else { return false }
-        return state.device.uniqueID() == device && state.button == ButtonNumber(truncating: button)
+        return state.device == device && state.button == ButtonNumber(truncating: button)
     }
     func isActiveFor(button: NSNumber) -> Bool {
         guard let state = state else { return false }
