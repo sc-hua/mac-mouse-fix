@@ -151,15 +151,20 @@ IOHIDDeviceRef _Nullable getSendingDeviceWithSenderID(uint64_t senderID) {
     }
     
     id iohidDeviceFromCache = _hidDeviceCache[@(senderID)];
-    
+
     if (iohidDeviceFromCache != nil) {
+        if (iohidDeviceFromCache == NSNull.null) return NULL; /// Cached unresolvable senderID
         return (__bridge IOHIDDeviceRef)iohidDeviceFromCache;
     }
-    
+
     IOHIDDeviceRef iohidDevice = copySendingDevice_Reliable(senderID);
-    
-    _hidDeviceCache[@(senderID)] = (__bridge_transfer id _Nullable)(iohidDevice); /// Should we do this when the iohidDevice is NULL? || [May 2025] Setting nil to an NSDictionary like this should simply remove the key. Casting to `_Nullable` here makes no sense.
-    
+
+    /// Cache unresolvable senderIDs as NSNull instead of nil (which would just remove the key).
+    ///     Events injected by other processes (remote-input tools like Deskflow/Synergy) carry
+    ///     senderIDs that map to no IOHIDDevice. Resolving those repeats the slow IORegistry
+    ///     walk on every forwarded event, stalling the IOThread that also runs the drag callbacks.
+    _hidDeviceCache[@(senderID)] = (iohidDevice != NULL) ? (__bridge_transfer id _Nullable)(iohidDevice) : NSNull.null;
+
     return iohidDevice;
 }
 
@@ -202,12 +207,10 @@ IOHIDDeviceRef _Nullable copySendingDevice_Reliable(uint64_t senderID) {
     }];
     
     /// Validate
-    if (runningDebugMode()) {
-        BOOL isTakingLocalizationScreenshots = [NSProcessInfo.processInfo.arguments containsObject:@"-MF_ANNOTATE_LOCALIZED_STRINGS"];
-        if (!isTakingLocalizationScreenshots) {
-            assert(iohidDevice != NULL); /// NULL for events sent by localizedScreenshot XCUITest runner, otherwise shouldn't be NULL.
-        }
-    }
+    ///     NULL is a legitimate result here, don't assert on it:
+    ///     Events injected by other processes (remote-input tools like Deskflow/Synergy,
+    ///     XCUITest runners) carry senderIDs that map to no IOHIDDevice.
+    ///     All call-sites handle NULL (the function is `_Nullable` by contract).
     
     /// Return
     return iohidDevice;

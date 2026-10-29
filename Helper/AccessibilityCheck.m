@@ -32,6 +32,12 @@
 
 @implementation AccessibilityCheck
 
+static BOOL _inputIsInitialized = NO;
+
++ (BOOL)inputIsInitialized {
+    return _inputIsInitialized;
+}
+
 /// Load
 
 + (void)load {
@@ -258,6 +264,8 @@
 
     /// Start the IOThread after everything else (That way, eventTaps and stuff we moved from mainThread to IOThread in 'No more dispatch queues' refactor still only start after everything is loaded and don't race with `load_Manual` init) [Sep 2026]
     ///     -> This makes the whole `+load_Manual` sequence thread-safe (As long as we only use mainThread and IOThread) [Sep 2026]
+    /// Publish readiness before the IOThread can receive requests from the main app.
+    _inputIsInitialized = isTrusted;
     _enableRunLoopAsserts = 1; /** During the Helper's `load_Manual` startup sequence there's only one thread running (mainThread) and we allow it to touch all the state - here, where we start the `IOThread`. [Sep 2026] */
     [IOThread start];
 }
