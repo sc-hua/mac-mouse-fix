@@ -243,9 +243,10 @@ static void heavyProcessing(CGEventRef event, int64_t scrollDeltaAxis1, int64_t 
         
         /// Get sending device
         IOHIDDeviceRef sendingDev = CGEventGetSendingDevice(event);
-        
-        /// Debug
-        assert(sendingDev != NULL);
+
+        /// Forwarded events injected by other processes (remote-input tools like
+        /// Deskflow/Synergy) carry no sending device. NULL is fine - the debug
+        /// printout below guards against it.
         
         /// Print info on sendingDev
         if (sendingDev != NULL) {
